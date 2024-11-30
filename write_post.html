@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>글쓰기 - 학과 토론방</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="main-header">
+    <h1 id="page-title">글쓰기</h1>
+    <nav class="main-nav">
+      <ul>
+        <li><a href="index.html">홈으로</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <section class="write-post">
+      <h2 id="department-title">글 작성</h2>
+      <form id="post-form">
+        <label for="post-title">제목:</label>
+        <input type="text" id="post-title" name="post-title" required>
+
+        <label for="post-content">내용:</label>
+        <textarea id="post-content" name="post-content" rows="10" required></textarea>
+
+        <label for="post-author">작성자:</label>
+        <input type="text" id="post-author" name="post-author" required>
+
+        <label for="post-password">비밀번호:</label>
+        <input type="password" id="post-password" name="post-password" required>
+
+        <button type="submit" class="btn-write">작성 완료</button>
+      </form>
+
+    </section>
+  </main>
+
+  <footer class="main-footer">
+    <p>&copy; 2024 동의대학교 학과토론방. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const department = urlParams.get('dept') || '알 수 없는 학과';
+    document.getElementById('department-title').innerText = `${department} - 글 작성`;
+
+    const postForm = document.getElementById('post-form');
+    postForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      savePost();
+    });
+
+    function savePost() {
+      const postTitle = document.getElementById('post-title').value;
+      const postContent = document.getElementById('post-content').value;
+      const postAuthor = document.getElementById('post-author').value;
+      const postPassword = document.getElementById('post-password').value; // 비밀번호
+
+      fetch('https://ipapi.co/json/')
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch IP');
+          return response.json();
+        })
+        .then(data => {
+          const userIP = data.ip;
+
+          const existingPosts = JSON.parse(localStorage.getItem(department)) || [];
+          const postId = existingPosts.length + 1;
+
+          const newPost = {
+            id: postId,
+            title: postTitle,
+            content: postContent,
+            author: `${postAuthor} (${userIP.split('.').slice(0, 2).join('.')})`,
+            password: postPassword, // 비밀번호 저장
+            date: new Date().toISOString(),
+            views: 0,
+            likes: 0
+          };
+
+          existingPosts.unshift(newPost);
+          localStorage.setItem(department, JSON.stringify(existingPosts));
+
+          alert('게시글 작성 완료!');
+          window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+        })
+        .catch(error => {
+          console.error('Failed to fetch IP:', error);
+          alert('IP 주소를 가져오는 데 실패했습니다. 다시 시도해주세요.');
+        });
+    }
+
+
+
+
+  </script>
+</body>
+
+</html>

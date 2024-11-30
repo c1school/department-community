@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">게시글 상세보기</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="main-header">
+    <h1 id="department-title">게시글 상세보기</h1>
+    <nav class="main-nav">
+      <ul>
+        <li><a href="#" id="back-to-list">목록으로</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <section class="post-detail">
+      <h2 id="post-title"></h2>
+      <p class="meta">
+        작성자: <span id="post-author"></span> |
+        작성일: <span id="post-date"></span> |
+        조회수: <span id="post-views"></span>
+        <button class="delete-post-btn" id="delete-post-btn">삭제</button>
+
+      </p>
+
+      <div id="post-content" class="content"></div>
+    </section>
+
+    <section class="comments">
+      <h3>댓글</h3>
+      <ul id="comment-list">
+        <!-- 동적으로 댓글 추가 -->
+      </ul>
+      <form id="comment-form">
+        <textarea id="comment-input" rows="3" placeholder="댓글을 입력하세요..." required></textarea>
+        <button type="submit" class="btn-submit">댓글 작성</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="main-footer">
+    <p>&copy; 2024 동의대학교 학과토론방. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // URL에서 학과와 게시글 인덱스 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const department = urlParams.get('dept');
+    const postIndex = parseInt(urlParams.get('postIndex'));
+
+    if (!department || isNaN(postIndex)) {
+      alert("잘못된 접근입니다.");
+      window.location.href = "index.html";
+    }
+
+    // 게시글 데이터 로드
+    const posts = JSON.parse(localStorage.getItem(department)) || [];
+    const post = posts[postIndex];
+
+    if (!post) {
+      alert("존재하지 않는 게시글입니다.");
+      window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+    }
+
+    // 게시글 표시
+    document.getElementById("page-title").innerText = `${post.title} - 상세보기`;
+    document.getElementById("department-title").innerText = `${department} 토론방`;
+    document.getElementById("post-title").innerText = post.title;
+    document.getElementById("post-author").innerText = post.author;
+    document.getElementById("post-date").innerText = new Date(post.date).toLocaleString();
+    document.getElementById("post-content").innerText = post.content;
+
+    // 조회수 증가
+    post.views = (post.views || 0) + 1;
+    posts[postIndex] = post;
+    localStorage.setItem(department, JSON.stringify(posts));
+    document.getElementById("post-views").innerText = post.views;
+
+    // 댓글 데이터 로드
+    const commentList = document.getElementById("comment-list");
+    const comments = JSON.parse(localStorage.getItem(`${department}-${postIndex}-comments`)) || [];
+
+    function renderComments() {
+      if (comments.length === 0) {
+        commentList.innerHTML = "<li>댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</li>";
+      } else {
+        commentList.innerHTML = comments
+          .map(comment => `<li>${comment}</li>`)
+          .join("");
+      }
+    }
+
+    renderComments();
+
+    // 댓글 작성
+    const commentForm = document.getElementById("comment-form");
+    commentForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const commentInput = document.getElementById("comment-input");
+      const newComment = commentInput.value.trim();
+
+      if (newComment) {
+        comments.push(newComment);
+        localStorage.setItem(`${department}-${postIndex}-comments`, JSON.stringify(comments));
+        renderComments();
+        commentInput.value = "";
+      }
+    });
+
+    // 목록으로 돌아가기
+    document.getElementById("back-to-list").addEventListener("click", () => {
+      window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+    });
+
+    const deletePostBtn = document.getElementById('delete-post-btn');
+    deletePostBtn.addEventListener('click', () => {
+      const userPassword = prompt("게시글 비밀번호를 입력하세요:");
+      if (!userPassword) return;
+
+      // 로컬스토리지에서 게시글 정보 가져오기
+      const posts = JSON.parse(localStorage.getItem(department)) || [];
+      const currentPost = posts[postIndex];
+
+      // 비밀번호 검증
+      if (currentPost.password === userPassword) {
+        // 게시글 삭제
+        posts.splice(postIndex, 1);
+        localStorage.setItem(department, JSON.stringify(posts));
+        alert("게시글이 삭제되었습니다.");
+        window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+      } else {
+        alert("비밀번호가 틀렸습니다. 다시 시도해주세요.");
+      }
+    });
+
+  </script>
+</body>
+
+</html>
