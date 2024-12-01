@@ -58,11 +58,14 @@
       savePost();
     });
 
+    import { ref, push } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { database } from "/firebase-init.js";
+
     function savePost() {
       const postTitle = document.getElementById('post-title').value;
       const postContent = document.getElementById('post-content').value;
       const postAuthor = document.getElementById('post-author').value;
-      const postPassword = document.getElementById('post-password').value; // 비밀번호
+      const postPassword = document.getElementById('post-password').value;
 
       fetch('https://ipapi.co/json/')
         .then(response => {
@@ -72,25 +75,27 @@
         .then(data => {
           const userIP = data.ip;
 
-          const existingPosts = JSON.parse(localStorage.getItem(department)) || [];
-          const postId = existingPosts.length + 1;
-
           const newPost = {
-            id: postId,
             title: postTitle,
             content: postContent,
             author: `${postAuthor} (${userIP.split('.').slice(0, 2).join('.')})`,
-            password: postPassword, // 비밀번호 저장
+            password: postPassword,
             date: new Date().toISOString(),
             views: 0,
             likes: 0
           };
 
-          existingPosts.unshift(newPost);
-          localStorage.setItem(department, JSON.stringify(existingPosts));
-
-          alert('게시글 작성 완료!');
-          window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+          // Firebase에 데이터 저장
+          const postsRef = ref(database, `posts/${department}`);
+          push(postsRef, newPost)
+            .then(() => {
+              alert('게시글 작성 완료!');
+              window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+            })
+            .catch(error => {
+              console.error('Firebase 저장 실패:', error);
+              alert('게시글 저장 중 문제가 발생했습니다. 다시 시도해주세요.');
+            });
         })
         .catch(error => {
           console.error('Failed to fetch IP:', error);
