@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>동의대 학과 토론방</title>
   <link rel="stylesheet" href="style.css">
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
   <script type="module" src="/firebase-init.js"></script>
 </head>
 
 <body>
-    <!-- 헤더 -->
+  <!-- 헤더 -->
   <header class="main-header">
     <h1>동의대학교 학과 토론방</h1>
     <nav class="main-nav">
@@ -111,6 +111,21 @@
           <li><a href="department_discussion.html?dept=K-뷰티학과">K-뷰티학과</a></li>
       </ul>
     </section>
+
+
+
+    <script>
+      // 예시로 새로운 데이터를 추가하는 코드
+      const newPostRef = push(ref(database, 'posts/간호학과')); // `push`를 사용해 새로운 고유 ID로 추가
+      set(newPostRef, {
+        title: "새로운 게시글 제목",
+        author: "홍길동",
+        date: new Date().toISOString(),
+        views: 0,
+        likes: 0
+      });
+
+    </script>
 
   </main>
 
