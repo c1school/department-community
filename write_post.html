@@ -49,60 +49,61 @@
 
   <script type="module" src="/firebase-init.js">
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const department = urlParams.get('dept') || '알 수 없는 학과';
-    document.getElementById('department-title').innerText = `${department} - 글 작성`;
+import { ref, push } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+import { database } from "/firebase-init.js";
 
-    const postForm = document.getElementById('post-form');
-    postForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      savePost();
-    });
+// URL에서 학과 정보 가져오기
+const urlParams = new URLSearchParams(window.location.search);
+const department = urlParams.get('dept') || '알 수 없는 학과';
+document.getElementById('department-title').innerText = `${department} - 글 작성`;
 
-    import { ref, push } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
-    import { database } from "/firebase-init.js";
+// 폼 제출 이벤트 핸들러
+document.getElementById('post-form').addEventListener('submit', (e) => {
+  e.preventDefault(); // 폼 기본 동작 방지
+  savePost();
+});
 
-    function savePost() {
-      const postTitle = document.getElementById('post-title').value;
-      const postContent = document.getElementById('post-content').value;
-      const postAuthor = document.getElementById('post-author').value;
-      const postPassword = document.getElementById('post-password').value;
+async function savePost() {
+  try {
+    const postTitle = document.getElementById('post-title').value.trim();
+    const postContent = document.getElementById('post-content').value.trim();
+    const postAuthor = document.getElementById('post-author').value.trim();
+    const postPassword = document.getElementById('post-password').value.trim();
 
-      fetch('https://ipapi.co/json/')
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to fetch IP');
-          return response.json();
-        })
-        .then(data => {
-          const userIP = data.ip;
-
-          const newPost = {
-            title: postTitle,
-            content: postContent,
-            author: `${postAuthor} (${userIP.split('.').slice(0, 2).join('.')})`,
-            password: postPassword,
-            date: new Date().toISOString(),
-            views: 0,
-            likes: 0
-          };
-
-          // Firebase에 데이터 저장
-          const postsRef = ref(database, `posts/${department}`);
-          push(postsRef, newPost)
-            .then(() => {
-              alert('게시글 작성 완료!');
-              window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
-            })
-            .catch(error => {
-              console.error('Firebase 저장 실패:', error);
-              alert('게시글 저장 중 문제가 발생했습니다. 다시 시도해주세요.');
-            });
-        })
-        .catch(error => {
-          console.error('Failed to fetch IP:', error);
-          alert('IP 주소를 가져오는 데 실패했습니다. 다시 시도해주세요.');
-        });
+    // 필수값 검증
+    if (!postTitle || !postContent || !postAuthor || !postPassword) {
+      alert('모든 필드를 입력해주세요.');
+      return;
     }
+
+    // IP 주소 가져오기
+    const ipResponse = await fetch('https://ipapi.co/json/');
+    if (!ipResponse.ok) throw new Error('IP 가져오기 실패');
+    const ipData = await ipResponse.json();
+    const userIP = ipData.ip;
+
+    // 새 게시글 객체 생성
+    const newPost = {
+      title: postTitle,
+      content: postContent,
+      author: `${postAuthor} (${userIP.split('.').slice(0, 2).join('.')})`,
+      password: postPassword,
+      date: new Date().toISOString(),
+      views: 0,
+      likes: 0,
+    };
+
+    // Firebase에 게시글 저장
+    const postsRef = ref(database, `posts/${department}`);
+    await push(postsRef, newPost);
+
+    alert('게시글이 성공적으로 작성되었습니다!');
+    window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
+  } catch (error) {
+    console.error('게시글 저장 중 오류 발생:', error);
+    alert('게시글 저장 중 문제가 발생했습니다. 다시 시도해주세요.');
+  }
+}
 
 
 
