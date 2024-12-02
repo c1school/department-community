@@ -93,7 +93,7 @@
         };
 
         // Firebase에 게시글 저장
-        const postsRef = ref(database, `posts/${department}`);
+        const postsRef = ref(db, `posts/${department}`);
         await push(postsRef, newPost);
 
         alert('게시글이 성공적으로 작성되었습니다!');
