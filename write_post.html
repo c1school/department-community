@@ -24,21 +24,22 @@
   <main class="main-content">
     <section class="write-post">
       <h2 id="department-title">글 작성</h2>
-      <form id="post-form">
+      <form id="post-form" method="POST">
         <label for="post-title">제목:</label>
         <input type="text" id="post-title" name="post-title" required>
-
+      
         <label for="post-content">내용:</label>
         <textarea id="post-content" name="post-content" rows="10" required></textarea>
-
+      
         <label for="post-author">작성자:</label>
         <input type="text" id="post-author" name="post-author" required>
-
+      
         <label for="post-password">비밀번호:</label>
-        <input type="password" id="post-password" name="post-password" required>
-
+        <input type="password" id="post-password" name="post-password" required autocomplete="current-password">
+      
         <button type="submit" class="btn-write">작성 완료</button>
       </form>
+      
 
     </section>
   </main>
