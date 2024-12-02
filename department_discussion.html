@@ -51,48 +51,57 @@
   <script type="module">
     import { db } from "./firebase-init.js";
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-  
 
-    
-    // URL에서 학과 정보 가져오기
-    const urlParams = new URLSearchParams(window.location.search);
-    const department = urlParams.get("dept");
-    console.log("URL에서 받은 dept 값:", department);
-  
-    if (!department) {
-      document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
-      throw new Error("학과 정보가 없습니다.");
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+  // URL에서 학과 정보 가져오기
+  const urlParams = new URLSearchParams(window.location.search);
+  const department = urlParams.get("dept");
+
+  if (!department) {
+    document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
+    throw new Error("학과 정보가 없습니다.");
+  }
+
+  // 글쓰기 버튼 클릭 이벤트 추가
+  const writePostBtn = document.getElementById('write-post-btn');
+  writePostBtn.addEventListener('click', () => {
+    window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
+  });
+
+  // Firebase 데이터 가져오기
+  const postsRef = ref(db, `posts/${department}`);
+  onValue(postsRef, (snapshot) => {
+    const postsData = snapshot.val();
+    const postsList = document.getElementById("posts");
+
+    if (!postsData) {
+      postsList.innerHTML = `<tr><td colspan="6">게시글이 없습니다.</td></tr>`;
+      return;
     }
-  
-    // Firebase 데이터 가져오기
-    const postsRef = ref(db, `posts/${department}`);
-    onValue(postsRef, (snapshot) => {
-      const postsData = snapshot.val();
-      const postsList = document.getElementById("posts");
-  
-      if (!postsData) {
-        postsList.innerHTML = `<tr><td colspan="6">게시글이 없습니다.</td></tr>`;
-        return;
-      }
-  
-      const posts = Object.values(postsData).sort((a, b) => new Date(b.date) - new Date(a.date));
-      postsList.innerHTML = posts
-        .map(
-          (post, index) => `
-            <tr>
-              <td>${posts.length - index}</td>
-              <td>${post.title}</td>
-              <td>${post.author}</td>
-              <td>${new Date(post.date).toLocaleDateString()}</td>
-              <td>${post.views}</td>
-              <td>${post.likes}</td>
-            </tr>
-          `
-        )
-        .join("");
-    });
+
+    const posts = Object.values(postsData).sort((a, b) => new Date(b.date) - new Date(a.date));
+    postsList.innerHTML = posts
+      .map(
+        (post, index) => `
+          <tr>
+            <td>${posts.length - index}</td>
+            <td>${post.title}</td>
+            <td>${post.author}</td>
+            <td>${new Date(post.date).toLocaleDateString()}</td>
+            <td>${post.views}</td>
+            <td>${post.likes}</td>
+          </tr>
+        `
+      )
+      .join("");
+  });
+});
+
+
   </script>
-  
+
 
 
 
