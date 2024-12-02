@@ -82,20 +82,19 @@
     }
 
     const posts = Object.values(postsData).sort((a, b) => new Date(b.date) - new Date(a.date));
-    postsList.innerHTML = posts
-      .map(
-        (post, index) => `
-          <tr>
-            <td>${posts.length - index}</td>
-            <td>${post.title}</td>
-            <td>${post.author}</td>
-            <td>${new Date(post.date).toLocaleDateString()}</td>
-            <td>${post.views}</td>
-            <td>${post.likes}</td>
-          </tr>
-        `
-      )
-      .join("");
+    postsList.innerHTML = Object.entries(postsData)
+  .map(([postId, post], index) => `
+      <tr>
+        <td>${Object.keys(postsData).length - index}</td>
+        <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
+        <td>${post.author}</td>
+        <td>${new Date(post.date).toLocaleDateString()}</td>
+        <td>${post.views}</td>
+        <td>${post.likes}</td>
+      </tr>
+    `)
+  .join("");
+
   });
 });
 
