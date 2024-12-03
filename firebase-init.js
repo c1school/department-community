@@ -16,10 +16,10 @@ const firebaseConfig = {
 
 // Firebase 초기화
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app); // Realtime Database 초기화
+const db = getDatabase(app);
 const analytics = getAnalytics(app);
 
 console.log("Firebase App Initialized:", app);
 console.log("Realtime Database Initialized:", db);
 
-export { db }; // 다른 스크립트에서 가져다 쓰기 위해 내보내기
+export { db };

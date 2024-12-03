@@ -41,10 +41,13 @@
         <!-- 동적으로 댓글 추가 -->
       </ul>
       <form id="comment-form">
+        <input id="comment-name" type="text" placeholder="이름" required>
+        <input id="comment-password" type="password" placeholder="비밀번호" required>
         <textarea id="comment-input" rows="3" placeholder="댓글을 입력하세요..." required></textarea>
         <button type="submit" class="btn-submit">댓글 작성</button>
       </form>
     </section>
+
   </main>
 
   <footer class="main-footer">
@@ -54,24 +57,24 @@
   <script type="module">
     import { db } from "/firebase-init.js";
     import { ref, get, update, remove, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-    
+
     // URL에서 학과와 게시글 ID 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     const department = urlParams.get('dept');
     const postId = urlParams.get('id');
-    
+
     if (!department || !postId) {
       document.body.innerHTML = "<p>잘못된 접근입니다. 글 정보를 확인할 수 없습니다.</p>";
       throw new Error("글 정보가 누락되었습니다.");
     }
-    
+
     // 게시글 데이터 로드
     const postRef = ref(db, `posts/${department}/${postId}`);
     get(postRef)
       .then((snapshot) => {
         if (snapshot.exists()) {
           const post = snapshot.val();
-    
+
           // 페이지에 게시글 데이터 표시
           document.getElementById("page-title").innerText = `${post.title} - 상세보기`;
           document.getElementById("department-title").innerText = `${department} 토론방`;
@@ -80,7 +83,7 @@
           document.getElementById("post-date").innerText = new Date(post.date).toLocaleString();
           document.getElementById("post-content").innerHTML = post.content || "내용이 없습니다.";
           document.getElementById("post-views").innerText = post.views || 0;
-    
+
           // 조회수 증가
           const newViews = (post.views || 0) + 1;
           update(postRef, { views: newViews });
@@ -92,55 +95,101 @@
         console.error("게시글 로드 중 오류 발생:", error);
         document.body.innerHTML = "<p>게시글을 불러오는 중 오류가 발생했습니다.</p>";
       });
-    
-    // 댓글 데이터 로드
-    const commentsRef = ref(db, `posts/${department}/${postId}/comments`);
-    onValue(commentsRef, (snapshot) => {
-      const commentList = document.getElementById("comment-list");
-      if (snapshot.exists()) {
-        const comments = snapshot.val();
-        commentList.innerHTML = Object.values(comments)
-          .map((comment) => `<li>${comment}</li>`)
-          .join("");
-      } else {
-        commentList.innerHTML = "<li>댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</li>";
-      }
+
+   // 댓글 데이터 로드 및 표시
+const commentsRef = ref(db, `posts/${department}/${postId}/comments`);
+onValue(commentsRef, (snapshot) => {
+  const commentList = document.getElementById("comment-list");
+  if (snapshot.exists()) {
+    const comments = snapshot.val();
+    commentList.innerHTML = Object.entries(comments)
+      .map(([key, comment]) => `
+        <li>
+          <p><strong>${comment.name} (${comment.ip})</strong></p>
+          <p>${comment.text}</p>
+          <button class="delete-comment-btn" data-key="${key}">삭제</button>
+        </li>
+      `)
+      .join("");
+
+    // 댓글 삭제 버튼 이벤트 추가
+    document.querySelectorAll(".delete-comment-btn").forEach((button) => {
+      button.addEventListener("click", (e) => {
+        const commentKey = e.target.dataset.key;
+        const userPassword = prompt("댓글 비밀번호를 입력하세요:");
+        if (!userPassword) return;
+
+        get(ref(db, `posts/${department}/${postId}/comments/${commentKey}`)).then((snapshot) => {
+          if (snapshot.exists()) {
+            const comment = snapshot.val();
+            if (comment.password === userPassword) {
+              remove(ref(db, `posts/${department}/${postId}/comments/${commentKey}`))
+                .then(() => alert("댓글이 삭제되었습니다."))
+                .catch((error) => console.error("댓글 삭제 중 오류 발생:", error));
+            } else {
+              alert("비밀번호가 틀렸습니다.");
+            }
+          }
+        });
+      });
     });
-    
-    // 댓글 작성
-    const commentForm = document.getElementById("comment-form");
-    commentForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const commentInput = document.getElementById("comment-input");
-      const newComment = commentInput.value.trim();
-    
-      if (newComment) {
-        push(commentsRef, newComment)
-          .then(() => {
-            commentInput.value = "";
-            alert("댓글이 작성되었습니다.");
-          })
-          .catch((error) => {
-            console.error("댓글 작성 중 오류 발생:", error);
-            alert("댓글 작성 중 문제가 발생했습니다.");
-          });
-      }
+  } else {
+    commentList.innerHTML = "<li>댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</li>";
+  }
+});
+
+// 댓글 작성
+const commentForm = document.getElementById("comment-form");
+commentForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("comment-name").value.trim();
+  const password = document.getElementById("comment-password").value.trim();
+  const text = document.getElementById("comment-input").value.trim();
+
+  if (!name || !password || !text) {
+    alert("모든 필드를 입력하세요.");
+    return;
+  }
+
+  // IP 주소 가져오기
+  let ip = "알 수 없음";
+  try {
+    const response = await fetch("https://api.ipify.org?format=json");
+    const data = await response.json();
+    ip = data.ip;
+  } catch (error) {
+    console.error("IP 주소를 가져오는 중 오류 발생:", error);
+  }
+
+  const newComment = { name, password, text, ip };
+
+  push(commentsRef, newComment)
+    .then(() => {
+      document.getElementById("comment-name").value = "";
+      document.getElementById("comment-password").value = "";
+      document.getElementById("comment-input").value = "";
+      alert("댓글이 작성되었습니다.");
+    })
+    .catch((error) => {
+      console.error("댓글 작성 중 오류 발생:", error);
+      alert("댓글 작성 중 문제가 발생했습니다.");
     });
-    
+});
+
     // 목록으로 돌아가기
     document.getElementById("back-to-list").addEventListener("click", () => {
       window.location.href = `department_discussion.html?dept=${encodeURIComponent(department)}`;
     });
-    
+
     // 게시글 삭제
     document.getElementById('delete-post-btn').addEventListener('click', () => {
       const userPassword = prompt("게시글 비밀번호를 입력하세요:");
       if (!userPassword) return;
-    
+
       get(postRef).then((snapshot) => {
         if (snapshot.exists()) {
           const post = snapshot.val();
-    
+
           // 비밀번호 확인
           if (post.password === userPassword) {
             remove(postRef)
@@ -160,8 +209,8 @@
         }
       });
     });
-    </script>
-    
+  </script>
+
 </body>
 
 </html>
