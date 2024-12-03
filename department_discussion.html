@@ -65,8 +65,9 @@
       document.getElementById("department-title").innerText = `${department} `;
       document.getElementById("discussion-title").innerText = `${department} 토론방`;
 
-      // 글쓰기 버튼 이벤트
-      document.getElementById('write-post-btn').addEventListener('click', () => {
+      // 글쓰기 버튼 클릭 이벤트 추가
+      const writePostBtn = document.getElementById('write-post-btn');
+      writePostBtn.addEventListener('click', () => {
         window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
       });
 
@@ -81,22 +82,38 @@
           return;
         }
 
-        // 게시글 정렬 및 출력
-        const sortedPosts = Object.entries(postsData).sort(
-          ([, a], [, b]) => new Date(b.date) - new Date(a.date)
-        );
+        const posts = Object.entries(postsData).sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
 
-        postsList.innerHTML = sortedPosts
-          .map(([postId, post], index) => `
-            <tr>
-              <td>${sortedPosts.length - index}</td>
-              <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
-              <td>${post.author}</td>
-              <td>${new Date(post.date).toLocaleDateString()}</td>
-              <td>${post.views || 0}</td>
-              <td>${post.likes || 0}</td>
-            </tr>
-          `)
+        postsList.innerHTML = posts
+          .map(([postId, post], index) => {
+            // 날짜 포맷팅
+            const postDate = new Date(post.date);
+            const today = new Date();
+            let formattedDate;
+
+            if (postDate.toDateString() === today.toDateString()) {
+              // 오늘 작성된 글이라면 시간 표시 (HH:mm)
+              const hours = String(postDate.getHours()).padStart(2, '0');
+              const minutes = String(postDate.getMinutes()).padStart(2, '0');
+              formattedDate = `${hours}:${minutes}`;
+            } else {
+              // 오늘이 아니면 MM.DD 형식
+              const month = String(postDate.getMonth() + 1).padStart(2, '0');
+              const day = String(postDate.getDate()).padStart(2, '0');
+              formattedDate = `${month}.${day}`;
+            }
+
+            return `
+          <tr>
+            <td>${Object.keys(postsData).length - index}</td>
+            <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
+            <td>${post.author}</td>
+            <td>${formattedDate}</td>
+            <td>${post.views}</td>
+            <td>${post.likes}</td>
+          </tr>
+        `;
+          })
           .join("");
       });
     });
