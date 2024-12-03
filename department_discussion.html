@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">학과 토론방</title>
+  <title id="page-title">학과토론방</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
@@ -13,7 +13,7 @@
 
 <body>
   <header class="main-header">
-    <h1 id="department-title">학과 토론방</h1>
+    <h1 id="department-title"></h1>
     <nav class="main-nav">
       <ul>
         <li><a href="index.html">홈으로</a></li>
@@ -64,7 +64,6 @@
       // 학과 이름 설정
       document.getElementById("department-title").innerText = `${department} `;
       document.getElementById("discussion-title").innerText = `${department} 토론방`;
-      
 
       // 글쓰기 버튼 이벤트
       document.getElementById('write-post-btn').addEventListener('click', () => {
