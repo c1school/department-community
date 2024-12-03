@@ -41,7 +41,6 @@
         </tbody>
       </table>
     </section>
-
   </main>
 
   <footer class="main-footer">
@@ -49,68 +48,60 @@
   </footer>
 
   <script type="module">
-    import { db } from "./firebase-init.js";
+    import { db } from "/firebase-init.js";
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
-
-
     document.addEventListener("DOMContentLoaded", () => {
-  // URL에서 학과 정보 가져오기
-  const urlParams = new URLSearchParams(window.location.search);
-  const department = urlParams.get("dept");
+      // URL에서 학과 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const department = urlParams.get("dept");
 
-  if (!department) {
-    document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
-    throw new Error("학과 정보가 없습니다.");
-  }
+      if (!department) {
+        document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
+        throw new Error("학과 정보가 없습니다.");
+      }
 
-  // 글쓰기 버튼 클릭 이벤트 추가
-  const writePostBtn = document.getElementById('write-post-btn');
-  writePostBtn.addEventListener('click', () => {
-    window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
-  });
+      // 학과 이름 설정
+      document.getElementById("department-title").innerText = `${department} `;
+      document.getElementById("discussion-title").innerText = `${department} 토론방`;
+      
 
-  // Firebase 데이터 가져오기
-  const postsRef = ref(db, `posts/${department}`);
-  onValue(postsRef, (snapshot) => {
-    const postsData = snapshot.val();
-    const postsList = document.getElementById("posts");
+      // 글쓰기 버튼 이벤트
+      document.getElementById('write-post-btn').addEventListener('click', () => {
+        window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
+      });
 
-    if (!postsData) {
-      postsList.innerHTML = `<tr><td colspan="6">게시글이 없습니다.</td></tr>`;
-      return;
-    }
+      // Firebase 데이터 가져오기
+      const postsRef = ref(db, `posts/${department}`);
+      onValue(postsRef, (snapshot) => {
+        const postsData = snapshot.val();
+        const postsList = document.getElementById("posts");
 
-    const posts = Object.values(postsData).sort((a, b) => new Date(b.date) - new Date(a.date));
-    postsList.innerHTML = Object.entries(postsData)
-  .map(([postId, post], index) => `
-      <tr>
-        <td>${Object.keys(postsData).length - index}</td>
-        <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
-        <td>${post.author}</td>
-        <td>${new Date(post.date).toLocaleDateString()}</td>
-        <td>${post.views}</td>
-        <td>${post.likes}</td>
-      </tr>
-    `)
-  .join("");
+        if (!postsData) {
+          postsList.innerHTML = `<tr><td colspan="6">게시글이 없습니다.</td></tr>`;
+          return;
+        }
 
-  });
-});
+        // 게시글 정렬 및 출력
+        const sortedPosts = Object.entries(postsData).sort(
+          ([, a], [, b]) => new Date(b.date) - new Date(a.date)
+        );
 
-
+        postsList.innerHTML = sortedPosts
+          .map(([postId, post], index) => `
+            <tr>
+              <td>${sortedPosts.length - index}</td>
+              <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
+              <td>${post.author}</td>
+              <td>${new Date(post.date).toLocaleDateString()}</td>
+              <td>${post.views || 0}</td>
+              <td>${post.likes || 0}</td>
+            </tr>
+          `)
+          .join("");
+      });
+    });
   </script>
-
-
-
-
-
-
-
-
-  </script>
-
-
 </body>
 
 </html>
