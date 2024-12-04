@@ -9,6 +9,7 @@
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
   <script type="module" src="/firebase-init.js"></script>
+  
 </head>
 
 <body>
@@ -25,21 +26,9 @@
     <section class="discussion">
       <h2 id="discussion-title">학과별 게시판</h2>
       <button id="write-post-btn" class="btn-write">글쓰기</button>
-      <table class="post-list">
-        <thead>
-          <tr>
-            <th>번호</th>
-            <th>제목</th>
-            <th>글쓴이</th>
-            <th>작성일</th>
-            <th>조회</th>
-            <th>추천</th>
-          </tr>
-        </thead>
-        <tbody id="posts">
-          <!-- 동적으로 게시글 추가 -->
-        </tbody>
-      </table>
+      <ul id="posts" class="post-list">
+        <!-- 동적으로 게시글 추가 -->
+      </ul>
     </section>
   </main>
 
@@ -52,7 +41,6 @@
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     document.addEventListener("DOMContentLoaded", () => {
-      // URL에서 학과 정보 가져오기
       const urlParams = new URLSearchParams(window.location.search);
       const department = urlParams.get("dept");
 
@@ -61,24 +49,21 @@
         throw new Error("학과 정보가 없습니다.");
       }
 
-      // 학과 이름 설정
       document.getElementById("department-title").innerText = `${department} `;
       document.getElementById("discussion-title").innerText = `${department} 토론방`;
 
-      // 글쓰기 버튼 클릭 이벤트 추가
       const writePostBtn = document.getElementById('write-post-btn');
       writePostBtn.addEventListener('click', () => {
         window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
       });
 
-      // Firebase 데이터 가져오기
       const postsRef = ref(db, `posts/${department}`);
       onValue(postsRef, (snapshot) => {
         const postsData = snapshot.val();
         const postsList = document.getElementById("posts");
 
         if (!postsData) {
-          postsList.innerHTML = `<tr><td colspan="6">게시글이 없습니다.</td></tr>`;
+          postsList.innerHTML = `<li class="post-item">게시글이 없습니다.</li>`;
           return;
         }
 
@@ -86,32 +71,30 @@
 
         postsList.innerHTML = posts
           .map(([postId, post], index) => {
-            // 날짜 포맷팅
             const postDate = new Date(post.date);
             const today = new Date();
             let formattedDate;
 
             if (postDate.toDateString() === today.toDateString()) {
-              // 오늘 작성된 글이라면 시간 표시 (HH:mm)
               const hours = String(postDate.getHours()).padStart(2, '0');
               const minutes = String(postDate.getMinutes()).padStart(2, '0');
               formattedDate = `${hours}:${minutes}`;
             } else {
-              // 오늘이 아니면 MM.DD 형식
               const month = String(postDate.getMonth() + 1).padStart(2, '0');
               const day = String(postDate.getDate()).padStart(2, '0');
               formattedDate = `${month}.${day}`;
             }
 
             return `
-          <tr>
-            <td>${Object.keys(postsData).length - index}</td>
-            <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
-            <td>${post.author}</td>
-            <td>${formattedDate}</td>
-            <td>${post.views}</td>
-            <td>${post.likes}</td>
-          </tr>
+          <li class="post-item">
+            <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-title">${post.title}</a>
+            <div class="post-meta">
+              <span>${post.author}　|　</span>
+              <span>${formattedDate}　|　</span>
+              <span>조회 ${post.views}　|　</span>
+              <span>추천 ${post.likes}</span>
+            </div>
+          </li>
         `;
           })
           .join("");
