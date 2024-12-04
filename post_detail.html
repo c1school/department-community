@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">게시글 상세보기</title>
+  <title id="page-title">학과 토론방 - `${department}`</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
@@ -13,7 +13,7 @@
 
 <body>
   <header class="main-header">
-    <h1 id="department-title">게시글 상세보기</h1>
+    <h1 id="department-title">토론 방</h1>
     <nav class="main-nav">
       <ul>
         <li><a href="#" id="back-to-list">목록으로</a></li>
@@ -68,6 +68,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const department = urlParams.get('dept');
     const postId = urlParams.get('id');
+
+    const pageTitle = document.getElementById("page-title");
+    pageTitle.textContent = `학과 토론방 - ${department}`;
 
     if (!department || !postId) {
       document.body.innerHTML = "<p>잘못된 접근입니다. 글 정보를 확인할 수 없습니다.</p>";
