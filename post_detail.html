@@ -27,9 +27,11 @@
       <p class="meta">
         작성자: <span id="post-author"></span> |
         작성일: <span id="post-date"></span> |
-        조회수: <span id="post-views"></span>
+        조회수: <span id="post-views"></span> |
+        추천수: <span id="post-likes"></span>
       </p>
       <div id="post-content" class="content"></div>
+      <button class="like-post-btn" id="like-post-btn">게시글 추천</button>
       <button class="delete-post-btn" id="delete-post-btn">게시글 삭제</button>
     </section>
 
@@ -78,6 +80,7 @@
       .then((snapshot) => {
         if (snapshot.exists()) {
           const post = snapshot.val();
+          const likes = post.likes || 0;
 
           // 페이지에 게시글 데이터 표시
           document.getElementById("page-title").innerText = `${post.title} - 상세보기`;
@@ -87,10 +90,51 @@
           document.getElementById("post-date").innerText = new Date(post.date).toLocaleString();
           document.getElementById("post-content").innerHTML = post.content || "내용이 없습니다.";
           document.getElementById("post-views").innerText = post.views || 0;
+          document.getElementById("post-likes").innerText = likes || 0;
 
-          // 조회수 증가
-          const newViews = (post.views || 0) + 1;
-          update(postRef, { views: newViews });
+
+          (async () => {
+            try {
+              // 사용자 IP 가져오기
+              let userIP = "unknown";
+              try {
+                const response = await fetch("https://api.ipify.org?format=json");
+                const data = await response.json();
+                userIP = data.ip.replace(/\./g, "_"); // 점(.)을 언더바(_)로 변환
+              } catch (error) {
+                console.error("IP 주소를 가져오는 중 오류 발생:", error);
+              }
+
+              // 조회수 중복 체크
+              const viewsIPRef = ref(db, `posts/${department}/${postId}/viewsIP/${userIP}`);
+              const viewsIPSnapshot = await get(viewsIPRef);
+
+              if (!viewsIPSnapshot.exists()) {
+                // 조회수 증가 조건
+                const postSnapshot = await get(postRef);
+                if (postSnapshot.exists()) {
+                  const post = postSnapshot.val();
+                  const newViews = (post.views || 0) + 1;
+
+                  // 조회수 증가
+                  await update(postRef, { views: newViews });
+
+                  // 조회한 IP 저장
+                  await update(ref(db, `posts/${department}/${postId}/viewsIP`), {
+                    [userIP]: true,
+                  });
+
+                  // 화면에 조회수 업데이트
+                  document.getElementById("post-views").innerText = newViews;
+                }
+              } else {
+                console.log("이미 조회한 IP입니다. 조회수를 증가시키지 않습니다.");
+              }
+            } catch (error) {
+              console.error("조회수 처리 중 오류 발생:", error);
+            }
+          })();
+
         } else {
           document.body.innerHTML = "<p>존재하지 않는 게시글입니다.</p>";
         }
@@ -213,6 +257,55 @@
         }
       });
     });
+
+    document.getElementById("like-post-btn").addEventListener("click", async () => {
+      try {
+        // 사용자 IP 주소 가져오기
+        let userIP = "unknown";
+        try {
+          const response = await fetch("https://api.ipify.org?format=json");
+          const data = await response.json();
+          userIP = data.ip.replace(/\./g, "_"); // 점(.)을 언더바(_)로 변환
+        } catch (error) {
+          console.error("IP 주소를 가져오는 중 오류 발생:", error);
+        }
+
+        // 추천한 IP 확인
+        const likesIPRef = ref(db, `posts/${department}/${postId}/likesIP/${userIP}`);
+        const likesIPSnapshot = await get(likesIPRef);
+
+        if (likesIPSnapshot.exists()) {
+          alert("이미 추천하셨습니다.");
+          return;
+        }
+
+        // 추천 수 증가 및 IP 저장
+        const postSnapshot = await get(postRef);
+        if (postSnapshot.exists()) {
+          const post = postSnapshot.val();
+          const newLikes = (post.likes || 0) + 1;
+
+          // 추천 수 업데이트
+          await update(postRef, { likes: newLikes });
+
+          // 추천한 IP 저장
+          await update(ref(db, `posts/${department}/${postId}/likesIP`), {
+            [userIP]: true,
+          });
+
+          // 화면에 추천 수 업데이트
+          document.getElementById("post-likes").innerText = newLikes;
+          alert("추천이 완료되었습니다.");
+        } else {
+          alert("게시글 정보를 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("추천 처리 중 오류 발생:", error);
+        alert("추천 처리 중 문제가 발생했습니다.");
+      }
+    });
+
+
   </script>
 </body>
 

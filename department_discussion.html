@@ -9,7 +9,6 @@
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
   <script type="module" src="/firebase-init.js"></script>
-  
 </head>
 
 <body>
@@ -26,6 +25,8 @@
     <section class="discussion">
       <h2 id="discussion-title">학과별 게시판</h2>
       <button id="write-post-btn" class="btn-write">글쓰기</button>
+      <button id="show-all-posts" class="ingi">전체 글</button>
+      <button id="show-popular-posts" class="ingi">인기 글</button>
       <ul id="posts" class="post-list">
         <!-- 동적으로 게시글 추가 -->
       </ul>
@@ -41,66 +42,122 @@
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     document.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const department = urlParams.get("dept");
+  const urlParams = new URLSearchParams(window.location.search);
+  const department = urlParams.get("dept");
 
-      if (!department) {
-        document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
-        throw new Error("학과 정보가 없습니다.");
-      }
+  if (!department) {
+    document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
+    throw new Error("학과 정보가 없습니다.");
+  }
 
-      document.getElementById("department-title").innerText = `${department} `;
-      document.getElementById("discussion-title").innerText = `${department} 토론방`;
+  document.getElementById("department-title").innerText = `${department} `;
+  document.getElementById("discussion-title").innerText = `${department} 토론방`;
 
-      const writePostBtn = document.getElementById('write-post-btn');
-      writePostBtn.addEventListener('click', () => {
-        window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
-      });
+  const writePostBtn = document.getElementById('write-post-btn');
+  writePostBtn.addEventListener('click', () => {
+    window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
+  });
 
-      const postsRef = ref(db, `posts/${department}`);
-      onValue(postsRef, (snapshot) => {
-        const postsData = snapshot.val();
-        const postsList = document.getElementById("posts");
+  const postsRef = ref(db, `posts/${department}`);
+  let allPosts = []; // 전체 게시글 저장
+  let isPopularMode = false; // 인기 글 모드 여부
 
-        if (!postsData) {
-          postsList.innerHTML = `<li class="post-item">게시글이 없습니다.</li>`;
-          return;
+  // 게시글 렌더링 함수
+  const renderPosts = (filterPopular = false) => {
+    const postsList = document.getElementById("posts");
+
+    // 필터링 적용
+    const filteredPosts = filterPopular
+      ? allPosts.filter(post => post.likes >= 10)
+      : allPosts;
+
+    if (filteredPosts.length === 0) {
+      postsList.innerHTML = `<li class="post-item">게시글이 없습니다.</li>`;
+      return;
+    }
+
+    postsList.innerHTML = filteredPosts
+      .map(({ id, title, author, date, views, likes }) => {
+        const postDate = new Date(date);
+        const today = new Date();
+        let formattedDate;
+
+        if (postDate.toDateString() === today.toDateString()) {
+          const hours = String(postDate.getHours()).padStart(2, '0');
+          const minutes = String(postDate.getMinutes()).padStart(2, '0');
+          formattedDate = `${hours}:${minutes}`;
+        } else {
+          const month = String(postDate.getMonth() + 1).padStart(2, '0');
+          const day = String(postDate.getDate()).padStart(2, '0');
+          formattedDate = `${month}.${day}`;
         }
 
-        const posts = Object.entries(postsData).sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
-
-        postsList.innerHTML = posts
-          .map(([postId, post], index) => {
-            const postDate = new Date(post.date);
-            const today = new Date();
-            let formattedDate;
-
-            if (postDate.toDateString() === today.toDateString()) {
-              const hours = String(postDate.getHours()).padStart(2, '0');
-              const minutes = String(postDate.getMinutes()).padStart(2, '0');
-              formattedDate = `${hours}:${minutes}`;
-            } else {
-              const month = String(postDate.getMonth() + 1).padStart(2, '0');
-              const day = String(postDate.getDate()).padStart(2, '0');
-              formattedDate = `${month}.${day}`;
-            }
-
-            return `
+        return `
           <li class="post-item">
-            <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-title">${post.title}</a>
+            <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
+              ${likes >= 10 ? "<span class='popular-tag' style='color:red'>(인기 글)</span>" : ""}
+              ${title}
+            </a>
             <div class="post-meta">
-              <span>${post.author}　|　</span>
-              <span>${formattedDate}　|　</span>
-              <span>조회 ${post.views}　|　</span>
-              <span>추천 ${post.likes}</span>
+              <span>${author} |</span>
+              <span>${formattedDate} |</span>
+              <span>조회 ${views} |</span>
+              <span>추천 ${likes}</span>
             </div>
           </li>
         `;
-          })
-          .join("");
-      });
-    });
+      })
+      .join("");
+  };
+
+  // Firebase에서 게시글 데이터 로드
+  onValue(postsRef, (snapshot) => {
+    const postsData = snapshot.val();
+    if (!postsData) {
+      allPosts = [];
+      renderPosts(isPopularMode);
+      return;
+    }
+
+    // 데이터 변환 및 정렬
+    allPosts = Object.entries(postsData)
+      .map(([id, post]) => ({
+        id,
+        title: post.title,
+        author: post.author,
+        date: post.date,
+        views: post.views || 0,
+        likes: post.likes || 0,
+      }))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    renderPosts(isPopularMode);
+  });
+
+  // 버튼 이벤트
+  const showAllPostsBtn = document.getElementById("show-all-posts");
+  const showPopularPostsBtn = document.getElementById("show-popular-posts");
+
+  showAllPostsBtn.addEventListener("click", () => {
+    isPopularMode = false;
+    renderPosts(false);
+    showAllPostsBtn.classList.add("active");
+    showPopularPostsBtn.classList.remove("active");
+  });
+
+  showPopularPostsBtn.addEventListener("click", () => {
+    isPopularMode = true;
+    renderPosts(true);
+    showPopularPostsBtn.classList.add("active");
+    showAllPostsBtn.classList.remove("active");
+  });
+
+  // 초기 로드 시 기본적으로 "전체 글" 버튼이 활성화된 상태로 설정
+  showAllPostsBtn.classList.add("active");
+});
+
   </script>
+
 </body>
 
 </html>

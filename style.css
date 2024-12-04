@@ -121,9 +121,7 @@
 
   /* ------------------------------------------------------department_discussion.html 스타일 */
   .btn-write {
-
     padding: 5px 10px;
-    font-size: 14px;
     background-color: #004d99;
     color: white;
     text-decoration: none;
@@ -134,9 +132,31 @@
     display: block;
     text-decoration: none;
     border-radius: 5px;
-    font-weight: bold;
     font-size: 16px;
+    cursor: pointer;
+    border: 0px;
   }
+
+  .ingi {
+    padding: 5px 10px;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .ingi:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .ingi.active {
+    background-color:#004d99;
+    color: white;
+  }
+  
 
   .btn-write:hover {
     background-color: #003366;
@@ -194,10 +214,6 @@
     .post-meta {
       font-size: 12px;
       flex-wrap: wrap;
-    }
-
-    .post-meta span {
-      margin-right: 5px;
     }
   }
   /*-------------------------------------------------------------------------write_post 스타일*/
@@ -332,6 +348,28 @@
     align-self: flex-end;
   }
   .delete-post-btn{
+    margin-left: 10px;
+    margin-top: 200px;
+    padding: 5px 5px;
+    background-color: #ff7575;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    align-self: flex-end;
+    font-size:13px;
+  }
+
+  .delete-post-btn:hover {
+  background-color: #ff0000; /* 또는 다른 추천 색상으로 변경 */
+  color: white;  /* 텍스트 색상도 하얀색으로 변경해 주세요 */
+}
+
+
+  .like-post-btn{
     margin-top: 200px;
     padding: 5px 5px;
     background-color: #004d99;
@@ -344,7 +382,10 @@
     transition: background-color 0.3s ease;
     align-self: flex-end;
     font-size:13px;
+  }
 
+  .like-post-btn:hover {
+    background-color: #003366;
   }
 
 
