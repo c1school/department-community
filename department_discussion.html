@@ -104,14 +104,14 @@
             }
 
             return `
-          <tr>
-            <td>${Object.keys(postsData).length - index}</td>
-            <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
-            <td>${post.author}</td>
-            <td>${formattedDate}</td>
-            <td>${post.views}</td>
-            <td>${post.likes}</td>
-          </tr>
+   <tr>
+      <td>${Object.keys(postsData).length - index}</td>
+      <td><a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(postId)}" class="post-link">${post.title}</a></td>
+      <td>${post.author}</td> <!-- 글쓴이 이름만 표시 -->
+      <td>${formatDate(post.date)}</td>
+      <td>${post.views}</td>
+      <td>${post.likes}</td>
+    </tr>
         `;
           })
           .join("");

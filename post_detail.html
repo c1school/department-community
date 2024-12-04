@@ -28,11 +28,9 @@
         작성자: <span id="post-author"></span> |
         작성일: <span id="post-date"></span> |
         조회수: <span id="post-views"></span>
-        <button class="delete-post-btn" id="delete-post-btn">삭제</button>
-
       </p>
-
       <div id="post-content" class="content"></div>
+      <button class="delete-post-btn" id="delete-post-btn">게시글 삭제</button>
     </section>
 
     <section class="comments">
@@ -46,15 +44,14 @@
           <input type="text" id="comment-name" placeholder="닉네임" required />
           <label for="comment-password"></label>
           <input type="password" id="comment-password" placeholder="비밀번호" required />
-          <textarea id="comment-input" rows="3" placeholder="타인의 권리를 침해하거나 명예를 훼손하는 댓글은 운영원칙 및 관련 법률에 의해 제재를 받을 수 있습니다." required></textarea>
+          <textarea id="comment-input" rows="3" placeholder="타인의 권리를 침해하거나 명예를 훼손하는 댓글은 운영원칙 및 관련 법률에 의해 제재를 받을 수 있습니다."
+            required></textarea>
           <p class="comment-guideline">
           </p>
         </div>
-          <button type="submit" class="btn-submit">등록</button>
+        <button type="submit" class="btn-submit">등록</button>
       </form>
-      
     </section>
-
   </main>
 
   <footer class="main-footer">
@@ -86,7 +83,7 @@
           document.getElementById("page-title").innerText = `${post.title} - 상세보기`;
           document.getElementById("department-title").innerText = `${department} 토론방`;
           document.getElementById("post-title").innerText = post.title;
-          document.getElementById("post-author").innerText = post.author;
+          document.getElementById("post-author").innerText = `${post.author} (${post.authorIP})`;
           document.getElementById("post-date").innerText = new Date(post.date).toLocaleString();
           document.getElementById("post-content").innerHTML = post.content || "내용이 없습니다.";
           document.getElementById("post-views").innerText = post.views || 0;
@@ -103,12 +100,6 @@
         document.body.innerHTML = "<p>게시글을 불러오는 중 오류가 발생했습니다.</p>";
       });
 
-    // IP 주소 앞 두 자리만 반환하는 함수
-    function getShortIp(ip) {
-      const parts = ip.split(".");
-      return `${parts[0]}.${parts[1]}`;
-    }
-
     // 댓글 데이터 로드 및 표시
     const commentsRef = ref(db, `posts/${department}/${postId}/comments`);
     onValue(commentsRef, (snapshot) => {
@@ -116,13 +107,15 @@
       if (snapshot.exists()) {
         const comments = snapshot.val();
         commentList.innerHTML = Object.entries(comments)
-          .map(([key, comment]) => `
+          .map(
+            ([key, comment]) => `
         <li>
           <p><strong>${comment.name} (${comment.ip})</strong></p>
           <p>${comment.text}</p>
           <button class="delete-comment-btn" data-key="${key}">삭제</button>
         </li>
-      `)
+      `
+          )
           .join("");
 
         // 댓글 삭제 버튼 이벤트 추가
@@ -146,8 +139,6 @@
             });
           });
         });
-      } else {
-        commentList.innerHTML = "<li>댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</li>";
       }
     });
 
@@ -169,7 +160,7 @@
       try {
         const response = await fetch("https://api.ipify.org?format=json");
         const data = await response.json();
-        ip = getShortIp(data.ip); // IP 주소 앞 두 자리만 가져오기
+        ip = `${data.ip.split(".")[0]}.${data.ip.split(".")[1]}`; // IP 주소 앞 두 자리만 가져오기
       } catch (error) {
         console.error("IP 주소를 가져오는 중 오류 발생:", error);
       }
@@ -195,7 +186,7 @@
     });
 
     // 게시글 삭제
-    document.getElementById('delete-post-btn').addEventListener('click', () => {
+    document.getElementById("delete-post-btn").addEventListener("click", () => {
       const userPassword = prompt("게시글 비밀번호를 입력하세요:");
       if (!userPassword) return;
 
@@ -223,7 +214,6 @@
       });
     });
   </script>
-
 </body>
 
 </html>

@@ -239,7 +239,6 @@
   overflow: hidden; /* 넘치는 텍스트 숨김 */
   text-overflow: ellipsis; /* 말줄임 표시 */
   text-align: center; /* 가운데 정렬 */
-  font-size:10px;
 }
 
 
@@ -382,6 +381,7 @@
     align-self: flex-end;
   }
   .delete-post-btn{
+    margin-top: 200px;
     padding: 5px 5px;
     background-color: #004d99;
     color: white;
@@ -393,6 +393,7 @@
     transition: background-color 0.3s ease;
     align-self: flex-end;
     font-size:13px;
+
   }
 
 
