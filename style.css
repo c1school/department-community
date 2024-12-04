@@ -45,6 +45,7 @@
     margin: 20px auto;
     max-width: 1000px;
     min-height: 100vh;
+    
   }
 
   .main-footer {
@@ -144,6 +145,7 @@
   }
 
   .btn-write {
+
     padding: 5px 10px;
     font-size: 14px;
     background-color: #004d99;
@@ -165,12 +167,13 @@
   }
 
   .post-list {
-    width: 100%;
+    width: 1000px;
     border-collapse: collapse;
     margin: 20px 0;
     background-color: white;
     table-layout: fixed;
     overflow: hidden
+    
   }
 
   .post-list td {
