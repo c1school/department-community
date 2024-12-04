@@ -29,6 +29,10 @@
       <ul id="all-popular-posts-list" class="post-list">
         <!-- 인기 글이 여기에 동적으로 추가됩니다 -->
       </ul>
+      <div class="search-section">
+        <input id="search-input" type="text" class="search-input"placeholder="검색어를 입력하세요" />
+        <button id="search-button"class="search-btn">검색</button>
+      </div>
     </section>
   </main>
 
@@ -40,9 +44,42 @@
     import { db } from "/firebase-init.js";
     import { ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
-    document.addEventListener("DOMContentLoaded", loadAllPopularPosts);
+    let allPopularPosts = []; // 전역 변수로 이동
 
-    let allPopularPosts = [];
+    document.addEventListener("DOMContentLoaded", () => {
+      loadAllPopularPosts();
+
+      // 검색 버튼 클릭 이벤트
+      document.getElementById("search-button").addEventListener("click", () => {
+        if (allPopularPosts.length > 0) {
+          const searchTerm = document.getElementById("search-input").value.trim();
+          if (searchTerm) {
+            filterPostsBySearch(searchTerm);
+          }
+        } else {
+          console.error("Posts are not loaded yet!");
+        }
+      });
+
+      // Enter 키로 검색
+      document.getElementById("search-input").addEventListener("keyup", (event) => {
+        if (event.key === "Enter") {
+          document.getElementById("search-button").click();
+        }
+      });
+
+      // 추천 순 버튼 클릭 이벤트
+      document.getElementById("show-all-posts").addEventListener("click", () => {
+        renderAllPopularPosts(allPopularPosts, "likes");
+        setActiveButton("show-all-posts");
+      });
+
+      // 최신 순 버튼 클릭 이벤트
+      document.getElementById("show-popular-posts").addEventListener("click", () => {
+        renderAllPopularPosts(allPopularPosts, "date");
+        setActiveButton("show-popular-posts");
+      });
+    });
 
     async function loadAllPopularPosts() {
       try {
@@ -51,9 +88,8 @@
 
         if (snapshot.exists()) {
           const posts = snapshot.val();
-          allPopularPosts = [];
+          allPopularPosts = []; // 기존 데이터를 비우고 초기화
 
-          // 학과별로 순회하며 추천수가 10 이상인 글을 수집
           Object.keys(posts).forEach((department) => {
             Object.keys(posts[department]).forEach((postId) => {
               const post = posts[department][postId];
@@ -76,7 +112,7 @@
           renderAllPopularPosts(allPopularPosts, "likes");
         } else {
           console.log("No posts available.");
-          renderAllPopularPosts([], "likes"); // 빈 목록 처리
+          renderAllPopularPosts([], "likes");
         }
       } catch (error) {
         console.error("Error loading all popular posts:", error);
@@ -135,19 +171,13 @@
         .join("");
     }
 
-    // 추천 순 버튼 클릭 시
-    document.getElementById("show-all-posts").addEventListener("click", () => {
-      // 추천 순으로 정렬
-      renderAllPopularPosts(allPopularPosts, "likes");
-      setActiveButton("show-all-posts");
-    });
-
-    // 최신 순 버튼 클릭 시
-    document.getElementById("show-popular-posts").addEventListener("click", () => {
-      // 최신 순으로 정렬
-      renderAllPopularPosts(allPopularPosts, "date");
-      setActiveButton("show-popular-posts");
-    });
+    // 검색 기능
+    function filterPostsBySearch(searchTerm) {
+      const filteredPosts = allPopularPosts.filter((post) =>
+        post.title.includes(searchTerm) || post.author.includes(searchTerm)
+      );
+      renderAllPopularPosts(filteredPosts, "likes");
+    }
 
     // 활성화된 버튼 스타일 변경
     function setActiveButton(activeId) {
@@ -156,7 +186,6 @@
       document.getElementById(activeId).classList.add("active");
     }
   </script>
-
 </body>
 
 </html>
