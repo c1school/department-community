@@ -1,4 +1,3 @@
-// firebase-init.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
@@ -23,3 +22,4 @@ console.log("Firebase App Initialized:", app);
 console.log("Realtime Database Initialized:", db);
 
 export { db };
+

@@ -3,6 +3,7 @@
 <html lang="ko">
 
 <head>
+    <!-- head. 스타일시트와 데이터베이스에 필요한 파일들을 가져온다 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">학과 토론방</title>
@@ -13,6 +14,7 @@
 </head>
 
 <body>
+      <!-- 헤더. 페이지 상단에 학과 이름과 홈으로 가는 링크이다. -->
   <header class="main-header">
     <h1 id="department-title"></h1>
     <nav class="main-nav">
@@ -21,7 +23,7 @@
       </ul>
     </nav>
   </header>
-
+      <!-- 메인. 게시글 목록이다. -->
   <main class="main-content">
     <section class="discussion">
       <h2 id="discussion-title">학과별 게시판</h2>
@@ -29,7 +31,7 @@
       <button id="show-all-posts" class="ingi">전체 글</button>
       <button id="show-popular-posts" class="ingi">인기 글</button>
       <ul id="posts" class="post-list">
-        <!-- 동적으로 게시글 추가 -->
+        <!-- 데이터베이스에서 동적으로 게시글 추가 -->
       </ul>
       <div class="search-section">
         <input id="search-input" type="text" class="search-input" placeholder="검색어를 입력하세요" />
@@ -37,159 +39,200 @@
       </div>
     </section>
   </main>
-
+      <!-- 푸터 -->
   <footer class="main-footer">
     <p>&copy; 2024 동의대학교 학과토론방. All rights reserved.</p>
   </footer>
 
-  <script type="module">
+<script type="module">
     import { db } from "/firebase-init.js";
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     document.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const department = urlParams.get("dept");
+        // URL에서 'dept' 파라미터를 가져와 학과 정보를 확인한다
+        const urlParams = new URLSearchParams(window.location.search);
+        const department = urlParams.get("dept");
 
-      if (!department) {
-        document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
-        throw new Error("학과 정보가 없습니다.");
-      }
+        // 학과 정보가 없는 경우 사용자에게 오류 메시지를 표시하고 스크립트를 중단한다
+        if (!department) {
+            document.body.innerHTML = "<p>학과 정보를 찾을 수 없습니다.</p>";
+            throw new Error("학과 정보가 없습니다.");
+        }
 
-      document.getElementById("page-title").textContent = `학과 토론방 - ${department}`;
-      document.getElementById("department-title").innerText = `${department}`;
-      document.getElementById("discussion-title").innerText = `${department} 토론방`;
+        // HTML 요소에 학과 이름을 설정하여 사용자에게 현재 학과 정보를 표시한다
+        document.getElementById("page-title").textContent = `학과 토론방 - ${department}`;
+        document.getElementById("department-title").innerText = `${department}`;
+        document.getElementById("discussion-title").innerText = `${department} 토론방`;
 
-      document.getElementById("write-post-btn").addEventListener("click", () => {
-        window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
-      });
-
-      const postsRef = ref(db, `posts/${department}`);
-      let allPosts = [];
-      let filteredPosts = [];
-      let isPopularMode = false;
-
-      // 게시글 데이터 로드
-      onValue(postsRef, (snapshot) => {
-        const postsData = snapshot.val();
-        allPosts = postsData
-          ? Object.entries(postsData).map(([id, post]) => ({
-            id,
-            title: post.title,
-            author: post.author,
-            authorIP: post.authorIP,
-            date: post.date,
-            views: post.views || 0,
-            likes: post.likes || 0,
-            content: post.content || "", // 게시글 내용 추가
-            commentsPath: `posts/${department}/${id}/comments`
-          }))
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-          : [];
-
-        filteredPosts = [...allPosts];
-        loadCommentCounts();
-      });
-
-      // 댓글 개수 저장용 객체
-      const commentCounts = {};
-
-      // 댓글 개수 로드
-      const loadCommentCounts = () => {
-        allPosts.forEach(post => {
-          const commentsRef = ref(db, post.commentsPath);
-          onValue(commentsRef, (snapshot) => {
-            const commentsData = snapshot.val();
-            commentCounts[post.id] = commentsData ? Object.keys(commentsData).length : 0;
-            renderPosts();
-          });
+        // '글쓰기' 버튼 클릭 시 해당 학과의 게시글 작성 페이지로 이동한다
+        document.getElementById("write-post-btn").addEventListener("click", () => {
+            window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
         });
-      };
 
-      // 게시글 렌더링 함수
-      const renderPosts = () => {
-        const postsList = document.getElementById("posts");
-        const displayPosts = isPopularMode
-          ? filteredPosts.filter(post => post.likes >= 10)
-          : filteredPosts;
+        // Firebase Realtime Database의 학과별 게시글 경로를 참조한다
+        const postsRef = ref(db, `posts/${department}`);
 
-        if (displayPosts.length === 0) {
-          postsList.innerHTML = `<li class="post-item">게시글이 없습니다.</li>`;
-          return;
-        }
+        // 게시글 데이터를 저장할 배열을 선언한다
+        let allPosts = []; // 전체 게시글 데이터를 저장
+        let filteredPosts = []; // 검색이나 필터링 후의 게시글 데이터를 저장
+        let isPopularMode = false; // 인기 글 모드 활성화 여부를 판단
 
-        postsList.innerHTML = displayPosts
-          .map(({ id, title, author, authorIP, date, views, likes }) => {
-            const postDate = new Date(date);
-            const today = new Date();
-            const formattedDate =
-              postDate.toDateString() === today.toDateString()
-                ? `${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`
-                : `${(postDate.getMonth() + 1).toString().padStart(2, '0')}.${postDate.getDate().toString().padStart(2, '0')}`;
+        // Firebase 데이터베이스에서 게시글 데이터를 실시간으로 가져온다
+        onValue(postsRef, (snapshot) => {
+            const postsData = snapshot.val();
 
-            const commentCount = commentCounts[id] || 0;
-            const commentCountDisplay = commentCount > 0 ? ` [${commentCount}]` : ""; // 댓글 개수가 0이면 표시 안 함
+            // 데이터가 존재할 경우 게시글 데이터를 객체 배열로 변환한다
+            allPosts = postsData
+                ? Object.entries(postsData).map(([id, post]) => ({
+                      id, // 게시글 ID
+                      title: post.title, // 게시글 제목
+                      author: post.author, // 작성자
+                      authorIP: post.authorIP, // 작성자 IP
+                      date: post.date, // 작성일
+                      views: post.views || 0, // 조회수 (기본값 0)
+                      likes: post.likes || 0, // 추천수 (기본값 0)
+                      content: post.content || "", // 게시글 내용 (기본값 빈 문자열)
+                      commentsPath: `posts/${department}/${id}/comments`, // 댓글 경로
+                  }))
+                      .sort((a, b) => new Date(b.date) - new Date(a.date)) // 최신순으로 정렬
+                : [];
 
-            return `
-        <li class="post-item">
-          <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
-            ${likes >= 10 ? "<span class='popular-tag' style='color:red'>(인기 글)</span>" : ""} ${title}<span style='color:#004d99'>${commentCountDisplay}</span>
-          </a>
-          <div class="post-meta">
-            <span>${author}</span>
-            <span>(${authorIP}) |</span>
-            <span>${formattedDate} |</span>
-            <span>조회 ${views} |</span>
-            <span>추천 ${likes}</span>
-          </div>
-        </li>`;
-          })
-          .join("");
-      };
+            // 필터링된 게시글 배열을 초기화한다
+            filteredPosts = [...allPosts];
 
+            // 댓글 개수를 로드하여 화면에 게시글을 렌더링한다
+            loadCommentCounts();
+        });
 
-      // 필터 버튼 이벤트
-      document.getElementById("show-all-posts").addEventListener("click", () => {
-        isPopularMode = false;
-        renderPosts();
+        // 게시글 ID별 댓글 개수를 저장하는 객체를 선언한다
+        const commentCounts = {};
+
+        // 게시글별 댓글 데이터를 Firebase에서 가져와 댓글 개수를 업데이트한다
+        const loadCommentCounts = () => {
+            allPosts.forEach((post) => {
+                const commentsRef = ref(db, post.commentsPath);
+                onValue(commentsRef, (snapshot) => {
+                    const commentsData = snapshot.val();
+                    commentCounts[post.id] = commentsData ? Object.keys(commentsData).length : 0; // 댓글 개수를 계산
+                    renderPosts(); // 댓글 데이터가 업데이트될 때마다 게시글을 렌더링
+                });
+            });
+        };
+
+        // 게시글 목록을 렌더링하는 함수
+        const renderPosts = () => {
+            const postsList = document.getElementById("posts");
+
+            // 현재 모드에 따라 표시할 게시글 데이터를 결정한다
+            const displayPosts = isPopularMode
+                ? filteredPosts.filter((post) => post.likes >= 10) // 인기 글 모드에서는 추천수 10 이상인 게시글만 표시
+                : filteredPosts;
+
+            // 게시글이 없을 경우 화면에 적절한 메시지를 표시한다
+            if (displayPosts.length === 0) {
+                postsList.innerHTML = `<li class="post-item">게시글이 없습니다.</li>`;
+                return;
+            }
+
+            // 게시글 데이터를 HTML로 변환하여 화면에 추가한다
+            postsList.innerHTML = displayPosts
+                .map(({ id, title, author, authorIP, date, views, likes }) => {
+                    const postDate = new Date(date);
+                    const today = new Date();
+
+                    // 작성일을 현재 날짜와 비교하여 형식을 결정한다
+                    const formattedDate =
+                        postDate.toDateString() === today.toDateString()
+                            ? `${postDate.getHours().toString().padStart(2, "0")}:${postDate.getMinutes()
+                                  .toString()
+                                  .padStart(2, "0")}`
+                            : `${(postDate.getMonth() + 1)
+                                  .toString()
+                                  .padStart(2, "0")}.${postDate
+                                  .getDate()
+                                  .toString()
+                                  .padStart(2, "0")}`;
+
+                    const commentCount = commentCounts[id] || 0; // 댓글 개수를 가져온다
+                    const commentCountDisplay =
+                        commentCount > 0 ? ` [${commentCount}]` : ""; // 댓글 개수가 0이면 표시하지 않는다
+
+                    return `
+                <li class="post-item">
+                  <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(
+                        id
+                    )}" class="post-title">
+                    ${
+                        likes >= 10
+                            ? "<span class='popular-tag' style='color:red'>(인기 글)</span>"
+                            : ""
+                    } ${title}<span style='color:#004d99'>${commentCountDisplay}</span>
+                  </a>
+                  <div class="post-meta">
+                    <span>${author}</span>
+                    <span>(${authorIP}) |</span>
+                    <span>${formattedDate} |</span>
+                    <span>조회 ${views} |</span>
+                    <span>추천 ${likes}</span>
+                  </div>
+                </li>`;
+                })
+                .join("");
+        };
+
+        // "전체 글" 버튼 클릭 시 전체 게시글을 표시한다
+        document.getElementById("show-all-posts").addEventListener("click", () => {
+            isPopularMode = false;
+            renderPosts();
+            toggleActiveButton("show-all-posts");
+        });
+
+        // "인기 글" 버튼 클릭 시 추천수 10 이상인 게시글만 표시한다
+        document.getElementById("show-popular-posts").addEventListener("click", () => {
+            isPopularMode = true;
+            renderPosts();
+            toggleActiveButton("show-popular-posts");
+        });
+
+        // 검색 버튼 클릭 시 검색어를 기준으로 게시글을 필터링한다
+        document.getElementById("search-button").addEventListener("click", () => {
+            const searchTerm = document.getElementById("search-input").value.trim();
+            filterPostsBySearch(searchTerm);
+        });
+
+        // Enter 키 입력 시 검색 버튼 동작을 트리거한다
+        document.getElementById("search-input").addEventListener("keyup", (event) => {
+            if (event.key === "Enter") {
+                document.getElementById("search-button").click();
+            }
+        });
+
+        // 검색어에 따라 게시글 데이터를 필터링한다
+        const filterPostsBySearch = (searchTerm) => {
+            filteredPosts = allPosts.filter(
+                (post) =>
+                    post.title.includes(searchTerm) ||
+                    post.author.includes(searchTerm) ||
+                    post.content.includes(searchTerm)
+            );
+            renderPosts();
+        };
+
+        // 현재 활성화된 버튼의 상태를 업데이트한다
+        const toggleActiveButton = (activeButtonId) => {
+            document
+                .getElementById("show-all-posts")
+                .classList.toggle("active", activeButtonId === "show-all-posts");
+            document
+                .getElementById("show-popular-posts")
+                .classList.toggle("active", activeButtonId === "show-popular-posts");
+        };
+
+        // 초기 상태로 전체 게시글 모드를 활성화한다
         toggleActiveButton("show-all-posts");
-      });
-
-      document.getElementById("show-popular-posts").addEventListener("click", () => {
-        isPopularMode = true;
-        renderPosts();
-        toggleActiveButton("show-popular-posts");
-      });
-
-      // 검색 버튼 이벤트
-      document.getElementById("search-button").addEventListener("click", () => {
-        const searchTerm = document.getElementById("search-input").value.trim();
-        filterPostsBySearch(searchTerm);
-      });
-
-      document.getElementById("search-input").addEventListener("keyup", (event) => {
-        if (event.key === "Enter") {
-          document.getElementById("search-button").click();
-        }
-      });
-
-      // 검색 기능
-      const filterPostsBySearch = (searchTerm) => {
-        filteredPosts = allPosts.filter((post) =>
-          post.title.includes(searchTerm) || post.author.includes(searchTerm) || post.content.includes(searchTerm)
-        );
-        renderPosts();
-      };
-
-      // 버튼 상태 관리 함수
-      const toggleActiveButton = (activeButtonId) => {
-        document.getElementById("show-all-posts").classList.toggle("active", activeButtonId === "show-all-posts");
-        document.getElementById("show-popular-posts").classList.toggle("active", activeButtonId === "show-popular-posts");
-      };
-
-      // 초기 상태
-      toggleActiveButton("show-all-posts");
     });
-  </script>
+</script>
+
 
 
 

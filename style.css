@@ -420,7 +420,6 @@
   color: white;  /* 텍스트 색상도 하얀색으로 변경해 주세요 */
 }
 
-
   .like-post-btn{
     margin-top: 200px;
     padding: 5px 5px;
@@ -510,8 +509,6 @@
   border-radius: 5px;
   font-size: 14px;
 }
-
-
 
 #comment-input {
   margin-top: 10px;

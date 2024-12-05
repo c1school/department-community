@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학과 토론방</title>
+  <!-- head. 스타일시트와 데이터베이스에 필요한 파일들을 가져온다 -->
   <link rel="stylesheet" href="style.css">
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
   <script type="module" src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js"></script>
@@ -20,19 +21,19 @@
     </nav>
   </header>
 
-  <!-- 메인 콘텐츠 -->
+  <!-- 메인 -->
   <main class="main-content">
-    <!-- 인기글 섹션 -->
     <section class="popular-posts">
       <h2>🔥랭킹 TOP 5</h2>
       <ul id="popular-posts-list">
-        <!-- 인기 글 목록 추가 -->
+        <!-- 데이터베이스 정보로 자동으로 글이 추가된다. -->
       </ul>
       <button id="view-more-popular" class="popular-btn">인기글 더보기</button>
     </section>
 
-    <!-- 학과별 링크 섹션 -->
     <section class="departments">
+      <!-- 학과별 링크 섹션. <li><a href="department_discussion.html?dept=간호학과">간호학과</a></li>
+       와 같이 선언되어 있으며 코드가 너무 길어 생략하였다. -->
       <ul>
         <div class="departments2">
           <h2>ㄱ</h2>
@@ -116,15 +117,15 @@
         </div>
         <div class="departments2">
           <h2>ㅊ</h2>
-        <li><a href="department_discussion.html?dept=창업투자경영학과">창업투자경영학과</a></li>
-        <li><a href="department_discussion.html?dept=체육학과">체육학과</a></li>
-        <li><a href="department_discussion.html?dept=치위생학과">치위생학과</a></li>
-      </div>
-      <div class="departments2">
-        <h2>ㅋ</h2>
-        <li><a href="department_discussion.html?dept=컴퓨터공학과">컴퓨터공학과</a></li>
-        <li><a href="department_discussion.html?dept=컴퓨터소프트웨어공학과">컴퓨터소프트웨어공학과</a></li>
-      </div>
+          <li><a href="department_discussion.html?dept=창업투자경영학과">창업투자경영학과</a></li>
+          <li><a href="department_discussion.html?dept=체육학과">체육학과</a></li>
+          <li><a href="department_discussion.html?dept=치위생학과">치위생학과</a></li>
+        </div>
+        <div class="departments2">
+          <h2>ㅋ</h2>
+          <li><a href="department_discussion.html?dept=컴퓨터공학과">컴퓨터공학과</a></li>
+          <li><a href="department_discussion.html?dept=컴퓨터소프트웨어공학과">컴퓨터소프트웨어공학과</a></li>
+        </div>
         <div class="departments2">
           <h2>ㅌ</h2>
           <li><a href="department_discussion.html?dept=태권도학과">태권도학과</a></li>
@@ -147,7 +148,7 @@
         <div class="departments2"></div>
         <h2>E</h2>
         <li><a href="department_discussion.html?dept=e비즈니스학과">e비즈니스학과</a></li>
-      </div>
+        </div>
         <div class="departments2">
           <h2>K</h2>
           <li><a href="department_discussion.html?dept=K-뷰티학과">K-뷰티학과</a></li>
@@ -160,78 +161,120 @@
     <p>&copy; 2024 동의대학교 학과토론방. All rights reserved.</p>
   </footer>
 
-  <!-- 스크립트 -->
-  <script type="module">
-    import { db } from "/firebase-init.js";
-    import { ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+<!-- 스크립트 -->
+<!-- 
+Firebase 연동 및 동적 데이터 관리를 위해 firebase-app.js와 firebase-database.js를 외부 모듈로 가져오고, 
+firebase-init.js로 프로젝트에 맞는 Firebase 초기화 코드를 분리하기위해 모듈 시스템을 활용한다. 
+이 방식은 코드를 재사용 가능하게 만들고 네임스페이스 충돌을 방지한다.
+-->
+<script type="module">
+  
+  // Firebase 모듈에서 Firebase Database 인스턴스 가져오기
+  import { db } from "/firebase-init.js";
 
-    // 인기 글 불러오기
-    async function loadPopularPosts() {
-      try {
-        const postsRef = ref(db, "posts");
-        const snapshot = await get(postsRef);
+  // Firebase Database의 ref와 get 메서드 가져오기
+  import { ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
-        if (snapshot.exists()) {
-          const posts = snapshot.val();
-          const popularPosts = [];
+  /**
+   * 인기 글 데이터를 Firebase로부터 불러오는 함수
+   * - 데이터는 posts 경로에 저장되어 있으며, 추천수가 10 이상인 게시글만 가져온다.
+   * - 각 학과별로 데이터를 탐색하여 인기 게시글을 수집한다.
+   * - 추천수를 기준으로 내림차순 정렬한 후 상위 5개 게시글을 선택한다.
+   */
+  async function loadPopularPosts() {
+    try {
+      // posts 경로에 대한 참조 생성
+      const postsRef = ref(db, "posts");
 
-          // 추천수 10 이상인 게시글 수집
-          Object.entries(posts).forEach(([department, departmentPosts]) => {
-            Object.entries(departmentPosts).forEach(([postId, post]) => {
-              if (post.likes >= 10) {
-                popularPosts.push({
-                  department,
-                  postId,
-                  title: post.title,
-                  likes: post.likes,
-                });
-              }
-            });
+      // Firebase에서 데이터 가져오기 (비동기 호출)
+      const snapshot = await get(postsRef);
+
+      if (snapshot.exists()) {
+        // 데이터가 존재하면 posts 데이터를 가져옴
+        const posts = snapshot.val();
+
+        // 인기 글 데이터를 담을 배열
+        const popularPosts = [];
+
+        // 학과별 데이터를 순회하며 추천수가 10 이상인 게시글 필터링
+        Object.entries(posts).forEach(([department, departmentPosts]) => {
+          Object.entries(departmentPosts).forEach(([postId, post]) => {
+            if (post.likes >= 10) {
+              popularPosts.push({
+                department,      // 학과명
+                postId,          // 게시글 ID
+                title: post.title, // 게시글 제목
+                likes: post.likes, // 추천 수
+              });
+            }
           });
+        });
 
-          // 추천수로 정렬하여 상위 5개 가져오기
-          const sortedPopularPosts = popularPosts
-            .sort((a, b) => b.likes - a.likes) // 추천수 내림차순 정렬
-            .slice(0, 5); // 상위 5개 선택
+        // 추천수를 기준으로 내림차순 정렬 후 상위 5개 선택
+        const sortedPopularPosts = popularPosts
+          .sort((a, b) => b.likes - a.likes) // 추천수가 많은 순으로 정렬
+          .slice(0, 5); // 최대 5개 게시글만 선택
 
-          console.log("Sorted Popular Posts:", sortedPopularPosts); // 디버깅용
-
-          renderPopularPosts(sortedPopularPosts);
-        } else {
-          renderPopularPosts([]);
-        }
-      } catch (error) {
-        console.error("Error loading popular posts:", error);
+        // 인기 글 렌더링 함수 호출
+        renderPopularPosts(sortedPopularPosts);
+      } else {
+        // 데이터가 없는 경우 빈 배열로 처리
+        renderPopularPosts([]);
       }
+    } catch (error) {
+      // 데이터 로드 중 오류 발생 시 오류 로그 출력
+      console.error("Error loading popular posts:", error);
     }
+  }
 
-    // 인기 글 렌더링
-    function renderPopularPosts(posts) {
-      const list = document.getElementById("popular-posts-list");
-      list.innerHTML = posts.length
-        ? posts
+  /**
+   * 인기 글 데이터를 HTML에 렌더링하는 함수
+   * - 상위 5개의 인기 게시글을 목록 형태로 생성하여 렌더링한다.
+   * - 게시글이 없을 경우 "인기글이 없습니다."라는 메시지를 출력한다.
+   * @param {Array} posts - 인기 게시글 데이터 배열
+   */
+  function renderPopularPosts(posts) {
+    // 인기 글이 렌더링될 UL 태그 요소를 가져온다.
+    const list = document.getElementById("popular-posts-list");
+
+    // HTML 생성: 게시글 데이터가 있을 경우와 없을 경우의 조건 처리
+    list.innerHTML = posts.length
+      ? posts
           .map(
             (post, index) => `
               <li>
+                <!-- 게시글 링크 생성 -->
                 <a href="post_detail.html?dept=${post.department}&id=${post.postId}" style="font-size:18px">
-                  <b><span style='color:black'>${index + 1}. <span style='color:#004d99'>[${post.department}]</span>
-                                      <span style="color:red; font-size:13px;">(추천: ${post.likes}) </span>${post.title} </b>
+                  <!-- 순위, 학과명, 추천 수 및 제목 표시 -->
+                  <b>
+                    <span style='color:black'>${index + 1}. 
+                    <span style='color:#004d99'>[${post.department}]</span>
+                    <span style="color:red; font-size:13px;">(추천: ${post.likes})</span> 
+                    ${post.title}
+                    </span>
+                  </b>
                 </a>
               </li>
             `
           )
-          .join("")
-        : "<li>인기글이 없습니다.</li>";
+          .join("") // 각 리스트 항목을 HTML 문자열로 합침
+      : "<li>인기글이 없습니다.</li>"; // 게시글이 없을 때 표시할 메시지
+  }
 
-      console.log("Rendered HTML:", list.innerHTML); // 디버깅용
-    }
+  /**
+   * 초기화 및 이벤트 바인딩
+   * - 페이지가 로드된 후 loadPopularPosts()를 호출하여 인기 글 데이터를 로드한다.
+   * - "더보기" 버튼 클릭 시 인기글 페이지로 이동하도록 이벤트를 바인딩한다.
+   */
+  document.addEventListener("DOMContentLoaded", loadPopularPosts);
 
-    // 이벤트 바인딩
-    document.addEventListener("DOMContentLoaded", loadPopularPosts);
-    document.getElementById("view-more-popular").addEventListener("click", () => {
-      window.location.href = "popular_posts.html";
-    });
-  </script>
+  // "더보기" 버튼 클릭 이벤트 처리
+  document.getElementById("view-more-popular").addEventListener("click", () => {
+    // 인기글 상세 페이지로 이동
+    window.location.href = "popular_posts.html";
+  });
+</script>
+
 </body>
 
 </html>
