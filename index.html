@@ -154,48 +154,48 @@
     <p>&copy; 2024 동의대학교 학과토론방. All rights reserved.</p>
   </footer>
 
-<script type="module">
-  import { db } from "/firebase-init.js";
-  import { ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+  <script type="module">
+    import { db } from "/firebase-init.js";
+    import { ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
-  async function loadPopularPosts() {
-    try {
-      const postsRef = ref(db, "posts");
-      const snapshot = await get(postsRef);
+    async function loadPopularPosts() {
+      try {
+        const postsRef = ref(db, "posts");
+        const snapshot = await get(postsRef);
 
-      if (snapshot.exists()) {
-        const posts = snapshot.val();
-        const popularPosts = [];
+        if (snapshot.exists()) {
+          const posts = snapshot.val();
+          const popularPosts = [];
 
-        Object.entries(posts).forEach(([department, departmentPosts]) => {
-          Object.entries(departmentPosts).forEach(([postId, post]) => {
-            if (post.likes >= 10) {
-              popularPosts.push({
-                department,      
-                postId,         
-                title: post.title, 
-                likes: post.likes, 
-              });
-            }
+          Object.entries(posts).forEach(([department, departmentPosts]) => {
+            Object.entries(departmentPosts).forEach(([postId, post]) => {
+              if (post.likes >= 10) {
+                popularPosts.push({
+                  department,
+                  postId,
+                  title: post.title,
+                  likes: post.likes,
+                });
+              }
+            });
           });
-        });
-        const sortedPopularPosts = popularPosts
-          .sort((a, b) => b.likes - a.likes)
-          .slice(0, 5);
+          const sortedPopularPosts = popularPosts
+            .sort((a, b) => b.likes - a.likes)
+            .slice(0, 5);
 
-        renderPopularPosts(sortedPopularPosts);
-      } else {
-        renderPopularPosts([]);
+          renderPopularPosts(sortedPopularPosts);
+        } else {
+          renderPopularPosts([]);
+        }
+      } catch (error) {
+        console.error("Error loading popular posts:", error);
       }
-    } catch (error) {
-      console.error("Error loading popular posts:", error);
     }
-  }
 
-  function renderPopularPosts(posts) {
-    const list = document.getElementById("popular-posts-list");
-    list.innerHTML = posts.length
-      ? posts
+    function renderPopularPosts(posts) {
+      const list = document.getElementById("popular-posts-list");
+      list.innerHTML = posts.length
+        ? posts
           .map(
             (post, index) => `
               <li>
@@ -214,12 +214,13 @@
             `
           )
           .join("")
-      : "<li>인기글이 없습니다.</li>";
-  }
-  document.addEventListener("DOMContentLoaded", loadPopularPosts);
-  document.getElementById("view-more-popular").addEventListener("click", () => {
-    window.location.href = "popular_posts.html";
-  });
-</script>
+        : "<li>인기글이 없습니다.</li>";
+    }
+    document.addEventListener("DOMContentLoaded", loadPopularPosts);
+    document.getElementById("view-more-popular").addEventListener("click", () => {
+      window.location.href = "popular_posts.html";
+    });
+  </script>
 </body>
+
 </html>
