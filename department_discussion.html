@@ -46,7 +46,6 @@
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     document.addEventListener("DOMContentLoaded", () => {
-      // URL에서 학과 정보를 가져오기
       const urlParams = new URLSearchParams(window.location.search);
       const department = urlParams.get("dept");
 
@@ -55,13 +54,11 @@
         throw new Error("학과 정보가 없습니다.");
       }
 
-      // 페이지 제목 및 헤더 설정
       document.getElementById("page-title").textContent = `학과 토론방 - ${department}`;
       document.getElementById("department-title").innerText = `${department}`;
       document.getElementById("discussion-title").innerText = `${department} 토론방`;
 
-      // 글쓰기 버튼 이벤트
-      document.getElementById('write-post-btn').addEventListener('click', () => {
+      document.getElementById("write-post-btn").addEventListener("click", () => {
         window.location.href = `write_post.html?dept=${encodeURIComponent(department)}`;
       });
 
@@ -70,7 +67,7 @@
       let filteredPosts = [];
       let isPopularMode = false;
 
-      // Firebase에서 게시글 데이터 로드
+      // 게시글 데이터 로드
       onValue(postsRef, (snapshot) => {
         const postsData = snapshot.val();
         allPosts = postsData
@@ -82,12 +79,28 @@
             date: post.date,
             views: post.views || 0,
             likes: post.likes || 0,
+            commentsPath: `posts/${department}/${id}/comments`
           }))
             .sort((a, b) => new Date(b.date) - new Date(a.date))
           : [];
         filteredPosts = [...allPosts];
-        renderPosts();
+        loadCommentCounts();
       });
+
+      // 댓글 개수 저장용 객체
+      const commentCounts = {};
+
+      // 댓글 개수 로드
+      const loadCommentCounts = () => {
+        allPosts.forEach(post => {
+          const commentsRef = ref(db, post.commentsPath);
+          onValue(commentsRef, (snapshot) => {
+            const commentsData = snapshot.val();
+            commentCounts[post.id] = commentsData ? Object.keys(commentsData).length : 0;
+            renderPosts();
+          });
+        });
+      };
 
       // 게시글 렌더링 함수
       const renderPosts = () => {
@@ -110,22 +123,26 @@
                 ? `${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`
                 : `${(postDate.getMonth() + 1).toString().padStart(2, '0')}.${postDate.getDate().toString().padStart(2, '0')}`;
 
+            const commentCount = commentCounts[id] || 0;
+            const commentCountDisplay = commentCount > 0 ? ` [${commentCount}]` : ""; // 댓글 개수가 0이면 표시 안 함
+
             return `
-              <li class="post-item">
-                <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
-                  ${likes >= 10 ? "<span class='popular-tag' style='color:red'>(인기 글)</span>" : ""} ${title}
-                </a>
-                <div class="post-meta">
-                  <span>${author}</span>
-                  <span>(${authorIP}) |</span>
-                  <span>${formattedDate} |</span>
-                  <span>조회 ${views} |</span>
-                  <span>추천 ${likes}</span>
-                </div>
-              </li>`;
+        <li class="post-item">
+          <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
+            ${likes >= 10 ? "<span class='popular-tag' style='color:red'>(인기 글)</span>" : ""} ${title}<span style='color:#004d99'>${commentCountDisplay}</span>
+          </a>
+          <div class="post-meta">
+            <span>${author}</span>
+            <span>(${authorIP}) |</span>
+            <span>${formattedDate} |</span>
+            <span>조회 ${views} |</span>
+            <span>추천 ${likes}</span>
+          </div>
+        </li>`;
           })
           .join("");
       };
+
 
       // 필터 버튼 이벤트
       document.getElementById("show-all-posts").addEventListener("click", () => {
@@ -170,6 +187,8 @@
       toggleActiveButton("show-all-posts");
     });
   </script>
+
+
 
 </body>
 

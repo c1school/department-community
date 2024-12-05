@@ -24,7 +24,7 @@
   <main class="main-content">
     <!-- 인기글 섹션 -->
     <section class="popular-posts">
-      <h2>인기글 랭킹 TOP 5</h2>
+      <h2>🔥랭킹 TOP 5</h2>
       <ul id="popular-posts-list">
         <!-- 인기 글 목록 추가 -->
       </ul>
@@ -181,8 +181,8 @@
               (post, index) => `
               <li>
                 <a href="post_detail.html?dept=${post.department}&id=${post.postId}" style="font-size:18px">
-                  <b><span style='color:black'>${index + 1}. <span style='color:#004d99'>[${post.department}]</span> ${post.title} </b>
-                  <span style="color:red; font-size:13px;">(추천: ${post.likes})</span>
+                  <b><span style='color:black'>${index + 1}. <span style='color:#004d99'>[${post.department}]</span>
+                                      <span style="color:red; font-size:13px;">(추천: ${post.likes}) </span>${post.title} </b>
                 </a>
               </li>
             `

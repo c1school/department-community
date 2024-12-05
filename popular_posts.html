@@ -23,7 +23,7 @@
 
   <main class="main-content">
     <section class="all-popular-posts">
-      <h2>모든 학과 인기 글</h2>
+      <h2>🔥인기 글🔥</h2>
       <button id="show-all-posts" class="ingi active">추천 순</button>
       <button id="show-popular-posts" class="ingi">최신 순</button>
       <ul id="all-popular-posts-list" class="post-list">
@@ -82,94 +82,98 @@
     });
 
     async function loadAllPopularPosts() {
-      try {
-        const postsRef = ref(db, "posts");
-        const snapshot = await get(postsRef);
+  try {
+    const postsRef = ref(db, "posts");
+    const snapshot = await get(postsRef);
 
-        if (snapshot.exists()) {
-          const posts = snapshot.val();
-          allPopularPosts = []; // 기존 데이터를 비우고 초기화
+    if (snapshot.exists()) {
+      const posts = snapshot.val();
+      allPopularPosts = []; // 기존 데이터를 비우고 초기화
 
-          Object.keys(posts).forEach((department) => {
-            Object.keys(posts[department]).forEach((postId) => {
-              const post = posts[department][postId];
-              if (post.likes && post.likes >= 10) {
-                allPopularPosts.push({
-                  department,
-                  id: postId,
-                  title: post.title,
-                  author: post.author,
-                  authorIP: post.authorIP || "알 수 없음",
-                  date: post.date,
-                  views: post.views || 0,
-                  likes: post.likes,
-                });
-              }
+      Object.keys(posts).forEach((department) => {
+        Object.keys(posts[department]).forEach((postId) => {
+          const post = posts[department][postId];
+          if (post.likes && post.likes >= 10) {
+            allPopularPosts.push({
+              department,
+              id: postId,
+              title: post.title,
+              author: post.author,
+              authorIP: post.authorIP || "알 수 없음",
+              date: post.date,
+              views: post.views || 0,
+              likes: post.likes,
+              commentCount: post.comments ? Object.keys(post.comments).length : 0, // 댓글 개수 계산
             });
-          });
-
-          // 기본적으로 추천 순으로 렌더링
-          renderAllPopularPosts(allPopularPosts, "likes");
-        } else {
-          console.log("No posts available.");
-          renderAllPopularPosts([], "likes");
-        }
-      } catch (error) {
-        console.error("Error loading all popular posts:", error);
-      }
-    }
-
-    // 인기 글 목록 렌더링
-    function renderAllPopularPosts(posts, sortBy) {
-      const postsList = document.getElementById("all-popular-posts-list");
-      postsList.innerHTML = "";
-
-      if (posts.length === 0) {
-        postsList.innerHTML = `<li class="post-item">인기 글이 없습니다.</li>`;
-        return;
-      }
-
-      // 정렬
-      if (sortBy === "likes") {
-        posts.sort((a, b) => b.likes - a.likes); // 추천 수 내림차순
-      } else if (sortBy === "date") {
-        posts.sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순
-      }
-
-      // 렌더링
-      postsList.innerHTML = posts
-        .map(({ department, id, title, author, authorIP, date, views, likes }) => {
-          const postDate = new Date(date);
-          const today = new Date();
-          let formattedDate;
-
-          if (postDate.toDateString() === today.toDateString()) {
-            const hours = String(postDate.getHours()).padStart(2, '0');
-            const minutes = String(postDate.getMinutes()).padStart(2, '0');
-            formattedDate = `${hours}:${minutes}`;
-          } else {
-            const month = String(postDate.getMonth() + 1).padStart(2, '0');
-            const day = String(postDate.getDate()).padStart(2, '0');
-            formattedDate = `${month}.${day}`;
           }
+        });
+      });
 
-          return `
-            <li class="post-item">
-              <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
-                <span class="popular-tag" style="color:red">[${department}] </span> ${title}
-              </a>
-              <div class="post-meta">
-                <span>${author}</span>
-                <span>(${authorIP}) |</span>
-                <span>${formattedDate} |</span>
-                <span>조회 ${views} |</span>
-                <span>추천 ${likes}</span>
-              </div>
-            </li>
-          `;
-        })
-        .join("");
+      // 기본적으로 추천 순으로 렌더링
+      renderAllPopularPosts(allPopularPosts, "likes");
+    } else {
+      console.log("No posts available.");
+      renderAllPopularPosts([], "likes");
     }
+  } catch (error) {
+    console.error("Error loading all popular posts:", error);
+  }
+}
+
+// 인기 글 목록 렌더링
+function renderAllPopularPosts(posts, sortBy) {
+  const postsList = document.getElementById("all-popular-posts-list");
+  postsList.innerHTML = "";
+
+  if (posts.length === 0) {
+    postsList.innerHTML = `<li class="post-item">인기 글이 없습니다.</li>`;
+    return;
+  }
+
+  // 정렬
+  if (sortBy === "likes") {
+    posts.sort((a, b) => b.likes - a.likes); // 추천 수 내림차순
+  } else if (sortBy === "date") {
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순
+  }
+
+  // 렌더링
+  postsList.innerHTML = posts
+    .map(({ department, id, title, author, authorIP, date, views, likes, commentCount }) => {
+      const postDate = new Date(date);
+      const today = new Date();
+      let formattedDate;
+
+      if (postDate.toDateString() === today.toDateString()) {
+        const hours = String(postDate.getHours()).padStart(2, '0');
+        const minutes = String(postDate.getMinutes()).padStart(2, '0');
+        formattedDate = `${hours}:${minutes}`;
+      } else {
+        const month = String(postDate.getMonth() + 1).padStart(2, '0');
+        const day = String(postDate.getDate()).padStart(2, '0');
+        formattedDate = `${month}.${day}`;
+      }
+
+      const commentDisplay = commentCount > 0 ? ` [${commentCount}]` : ""; // 댓글 표시
+
+      return `
+        <li class="post-item">
+          <a href="post_detail.html?dept=${encodeURIComponent(department)}&id=${encodeURIComponent(id)}" class="post-title">
+            <span class="popular-tag" style="color:red">[${department}] </span> ${title}<span style='color:#004d99'>${commentDisplay}</span>
+          </a>
+          <div class="post-meta">
+            <span>${author}</span>
+            <span>(${authorIP}) |</span>
+            <span>${formattedDate} |</span>
+            <span>조회 ${views} |</span>
+            <span>추천 ${likes}</span>
+          </div>
+        </li>
+      `;
+    })
+    .join("");
+}
+
 
     // 검색 기능
     function filterPostsBySearch(searchTerm) {
