@@ -4,4 +4,4 @@ DB : Gogle firebase
 
 Deploy , hosting : Vercel
 
-URL : [deu-community.kro.kr](deu-community.kro.kr)
+URL : [deu-community.kro.kr](http://deu-community.kro.kr)
